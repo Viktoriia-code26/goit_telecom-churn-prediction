@@ -398,7 +398,9 @@ server = app.server
 def field(name, value, step=1, yes_no=False):
     label = LABELS[name]
     if name == "reamining_contract":
-        label += " (years; leave blank if unknown)"
+        label += " (years; 0 means no time left)"
+    if name in ["download_avg", "upload_avg"]:
+        label += " (leave blank if unknown)"
 
     if yes_no:
         control = dcc.Dropdown(
@@ -448,13 +450,15 @@ sidebar = html.Aside([
     html.Div([
         field("is_tv_subscriber", 0, yes_no=True),
         field("is_movie_package_subscriber", 0, yes_no=True),
-        field("subscription_age", 2.0, step=0.1),
+        field("subscription_age", 2.0, step=0.01),
         field("bill_avg", 50),
+        field("reamining_contract", 1.0, step=0.01),
         field("service_failure_count", 0),
-        field("download_avg", 50.0, step=0.1),
-        field("upload_avg", 10.0, step=0.1),
+        field("download_avg", 50.0, step=0.01),
+        field("upload_avg", 10.0, step=0.01),
         field("download_over_limit", 0),
-        field("reamining_contract", 1.0, step=0.1),
+        
+        dcc.Checklist(id="contract-unknown", options=[{"label": "Contract duration unknown", "value": "unknown"}], className="sidebar-copy"),
     ], className="form-stack"),
 
     html.Button(
@@ -498,6 +502,10 @@ app.layout = html.Div([
     ], className="main-content"),
 ], className="app-shell")
 
+@app.callback(Output("reaminig-contract", "disabled"), 
+              Input("contract-unknown", "value"))
+def disable_unknown_contract(selection):
+    return "unknown" in (selection or [])
 
 @app.callback(
     Output("prediction-result", "children"),
@@ -511,6 +519,7 @@ app.layout = html.Div([
     State("upload_avg", "value"),
     State("download_over_limit", "value"),
     State("reamining_contract", "value"),
+    State("contract-unknown", "value"),
     prevent_initial_call=True,
 )
 def predict_churn(
@@ -524,7 +533,11 @@ def predict_churn(
     upload_avg,
     download_over_limit,
     reamining_contract,
+    contract_unknown,
 ):
+    if "unknown" in (contract_unknown or []):
+        reamining_contract = None
+
     if model is None:
         return html.Div(
             f"Model unavailable: {model_error}",
@@ -537,18 +550,16 @@ def predict_churn(
         subscription_age,
         bill_avg,
         service_failure_count,
-        download_avg,
-        upload_avg,
         download_over_limit,
     ]
 
     if any(value is None for value in values):
         return html.Div(
-            "Fill in all fields except the optional contract duration.",
+            "Fill in all fields required fields. Contract duration, download and upload may be unknown.",
             className="prediction-error",
         )
 
-    numbers = values + ([] if reamining_contract is None else [reamining_contract])
+    numbers = values + [v for v in [download_avg, upload_avg, reamining_contract] if v is not None] 
 
     if any(
         not isinstance(value, (int, float))
@@ -612,8 +623,8 @@ def predict_churn(
         "subscription_age": subscription_age,
         "bill_avg": bill_avg,
         "service_failure_count": int(service_failure_count),
-        "download_avg": download_avg,
-        "upload_avg": upload_avg,
+        "download_avg": float("nan") if download_avg is None else download_avg,
+        "upload_avg": float("nan") if upload_avg is None else upload_avg,
         "download_over_limit": int(download_over_limit),
         "reamining_contract": 0.0 if remaining_contract_missing else reamining_contract,
         "remaining_contract_missing": remaining_contract_missing,
