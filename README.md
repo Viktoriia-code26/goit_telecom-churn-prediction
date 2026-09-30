@@ -227,7 +227,8 @@ they do not establish causal effects or measure the improvement from adding a fe
 
 ## Dash
 
-The Dash application is implemented in `app.py`.
+The Dash application is implemented in `app.py`, with styles in
+`assets/style.css`. The Dockerfile copies the assets folder into the image.
 
 It allows the user to enter customer information and returns:
 
@@ -247,17 +248,23 @@ test-set results.
 The application also displays:
 
 -   prediction results;
--   Accuracy, Precision, Recall, F1 and ROC-AUC;
+-   customer count, actual churn rate, Accuracy, F1, and the share of high-risk customers;
+-   ROC-AUC in the ROC curve legend;
 -   confusion matrix;
 -   distribution of predicted churn probabilities;
 -   ROC curve;
 -   average predicted churn probability by remaining contract duration;
 -   feature importance.
 
+Precision and Recall are reported in the notebook and the model performance
+table above; they are not currently displayed as dashboard cards.
+
 ## Project Structure
 
 ```text
 goit_telecom-churn-prediction/
+├── assets/
+│   └── style.css
 ├── data/
 │   ├── internet_service_churn.csv
 │   └── predictions.csv
@@ -382,7 +389,7 @@ with Gunicorn on port 8050 as a non-root user. Docker must be running.
 Stop the foreground container with `Ctrl+C`. If port 8050 is occupied, stop
 the old container or use `-p 127.0.0.1:8051:8050` and open port 8051.
 Rebuild the image and recreate the container after changing the code,
-saved model, or CSV files.
+CSS, saved model, or CSV files.
 
 ## Reproduce the Analysis
 
@@ -411,8 +418,9 @@ the regenerated files in the application image.
 - Some exploratory analysis uses the full dataset; the test set was not
   completely excluded from exploratory inspection.
 - Test performance does not establish future performance or probability calibration.
-- The current form uses a shared upper bound of 900. This restricts some
-  valid download values in the dataset; field-specific bounds are needed.
+- Numeric inputs currently share an upper bound of 4500. This is a UI
+  limit, not a validated range for every feature; field-specific validation
+  would be more appropriate.
 - Download and upload inputs are currently required, although the trained
   pipeline can impute missing values in these columns.
 

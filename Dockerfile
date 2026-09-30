@@ -16,6 +16,7 @@ RUN groupadd --gid 10001 appuser \
 COPY --chown=appuser:appuser app.py ./app.py
 COPY --chown=appuser:appuser models/ ./models/
 COPY --chown=appuser:appuser data/ ./data/
+COPY --chown=appuser:appuser assets/ ./assets/
 
 USER appuser
 EXPOSE 8050
