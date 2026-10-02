@@ -502,8 +502,10 @@ app.layout = html.Div([
     ], className="main-content"),
 ], className="app-shell")
 
-@app.callback(Output("reaminig-contract", "disabled"), 
-              Input("contract-unknown", "value"))
+@app.callback(
+        Output("reamining-contract", "disabled"), 
+        Input("contract-unknown", "value")
+        )
 def disable_unknown_contract(selection):
     return "unknown" in (selection or [])
 
